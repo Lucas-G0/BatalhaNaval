@@ -3,22 +3,22 @@
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #define SIZE 10
 #define PORT 8080
 
 // Função para exibir o tabuleiro
 void displayBoard(char board[SIZE][SIZE]) {
-    printf("   ");
+    printf("  ");
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d ", i + 1);  // Exibe os números das colunas
+        printf("%d ", i + 1);
     }
     printf("\n");
-
     for (int i = 0; i < SIZE; i++) {
-        printf("%c  ", 'A' + i);  // Exibe as letras das linhas
+        printf("%c ", 'A' + i);
         for (int j = 0; j < SIZE; j++) {
-            printf("%c  ", board[i][j]);  // Exibe o conteúdo de cada célula
+            printf("%c ", board[i][j]);
         }
         printf("\n");
     }
@@ -29,12 +29,12 @@ int main() {
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
-    char board[SIZE][SIZE];  // Tabuleiro do cliente
+    char board[SIZE][SIZE];
     
-    // Inicializa o tabuleiro do cliente com '.' (água)
+    // Inicializa o tabuleiro do cliente
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            board[i][j] = '.';  // Marca todas as células com água
+            board[i][j] = '.';
         }
     }
 
@@ -60,10 +60,9 @@ int main() {
     printf("Conectado ao servidor!\n");
 
     while (1) {
-        // Recebe o tabuleiro do servidor (do oponente)
+        // Recebe o tabuleiro do servidor
         memset(buffer, 0, sizeof(buffer));
-        valread = read(sock, board, sizeof(board));
-
+        valread = read(sock, buffer, 1024);
         if (valread <= 0) {
             break;
         }
@@ -72,38 +71,18 @@ int main() {
         printf("\nSeu tabuleiro:\n");
         displayBoard(board);
 
-        // Exibe o tabuleiro do oponente (sem mostrar navios)
-        char opponentBoard[SIZE][SIZE];  // Tabuleiro do oponente
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                // Exibe apenas marcas de ataques e não os navios
-                if (board[i][j] == 'X') {
-                    opponentBoard[i][j] = '.';  // Não mostrar navios
-                } else {
-                    opponentBoard[i][j] = board[i][j];  // Mostra os ataques
-                }
-            }
-        }
-
-        printf("\nTabuleiro do Oponente (sem navios):\n");
-        displayBoard(opponentBoard);
-
         // Solicita ao cliente para enviar uma coordenada
         printf("Digite uma coordenada para atacar (ex: A1): ");
         scanf("%s", buffer);
 
-        // Envia a coordenada para o servidor
         send(sock, buffer, strlen(buffer), 0);
 
-        // Recebe a resposta do servidor (se foi acerto ou erro)
+        // Recebe a resposta do servidor
         memset(buffer, 0, sizeof(buffer));
         valread = read(sock, buffer, 1024);
         if (valread <= 0) {
             break;
         }
-
-        // Exibe a resposta do servidor (acerto/erro)
-        printf("%s\n", buffer);
     }
 
     close(sock);

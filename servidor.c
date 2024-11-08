@@ -22,7 +22,7 @@ void placeShip(char board[SIZE][SIZE]) {
     srand(time(NULL));
     int x = rand() % SIZE;
     int y = rand() % SIZE;
-    board[x][y] = 'X'; // Coloca um navio em uma posição aleatória
+    board[x][y] = 'S'; // Coloca um navio em uma posição aleatória
 }
 
 // Função para exibir o tabuleiro
@@ -41,35 +41,6 @@ void displayBoard(char board[SIZE][SIZE]) {
     }
 }
 
-// Função para processar o ataque do servidor no tabuleiro do cliente
-void serverAttack(char board[SIZE][SIZE], char opponentBoard[SIZE][SIZE]) {
-    int x = rand() % SIZE;
-    int y = rand() % SIZE;
-
-    // Verifica se o servidor acerta um navio no tabuleiro do cliente
-    if (opponentBoard[x][y] == 'X') {
-        opponentBoard[x][y] = 'O';  // Marca um acerto
-        printf("Servidor acertou em [%c%d]!\n", 'A' + x, y + 1);
-    } else {
-        opponentBoard[x][y] = 'M';  // Marca um erro
-        printf("Servidor errou em [%c%d].\n", 'A' + x, y + 1);
-    }
-}
-
-// Função para exibir o tabuleiro sem os navios
-void displayBoardWithoutShips(char board[SIZE][SIZE], char displayBoard[SIZE][SIZE]) {
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            // Se for um navio, exibe '.', caso contrário exibe o estado do ataque
-            if (board[i][j] == 'X') {
-                displayBoard[i][j] = '.'; // Não mostra os navios
-            } else {
-                displayBoard[i][j] = board[i][j]; // Exibe ataques ou marcações
-            }
-        }
-    }
-}
-
 // Função principal do servidor
 int main() {
     int server_fd, new_socket, valread;
@@ -77,7 +48,6 @@ int main() {
     char buffer[1024] = {0};
     char board[SIZE][SIZE];
     char opponentBoard[SIZE][SIZE];
-    char displayBoardOpponent[SIZE][SIZE]; // Tabuleiro para exibição sem os navios
     
     // Inicializa tabuleiros
     initBoard(board);
@@ -128,8 +98,8 @@ if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addr_len)) < 0)
         send(new_socket, buffer, strlen(buffer), 0);
 
         // Envia o tabuleiro para o cliente
-        displayBoardWithoutShips(opponentBoard, displayBoardOpponent);
-        send(new_socket, displayBoardOpponent, sizeof(displayBoardOpponent), 0);
+        displayBoard(opponentBoard);
+        send(new_socket, opponentBoard, sizeof(opponentBoard), 0);
 
         // Recebe a coordenada do cliente
         memset(buffer, 0, sizeof(buffer));
@@ -144,10 +114,11 @@ if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addr_len)) < 0)
         int x = buffer[0] - 'A';
         int y = buffer[1] - '1';
 
-        if (board[x][y] == 'X') {
+        if (board[x][y] == 'S') {
             board[x][y] = 'O';  // Marca um acerto
             snprintf(buffer, sizeof(buffer), "Acertou!\n");
         } else {
+            board[x][y] == 'X'; // Marca um erro
             snprintf(buffer, sizeof(buffer), "Errou.\n");
         }
 
@@ -158,7 +129,7 @@ if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addr_len)) < 0)
         int gameOver = 1;
         for (int i = 0; i < SIZE && gameOver; i++) {
             for (int j = 0; j < SIZE; j++) {
-                if (board[i][j] == 'X') {
+                if (board[i][j] == 'S') {
                     gameOver = 0;
                     break;
                 }
@@ -167,26 +138,6 @@ if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addr_len)) < 0)
 
         if (gameOver) {
             snprintf(buffer, sizeof(buffer), "Você venceu!\n");
-            send(new_socket, buffer, strlen(buffer), 0);
-            break;
-        }
-
-        // O servidor faz o seu ataque no tabuleiro do cliente
-        serverAttack(board, opponentBoard);
-
-        // Verifica se o jogo acabou após o ataque do servidor
-        gameOver = 1;
-        for (int i = 0; i < SIZE && gameOver; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (opponentBoard[i][j] == 'X') {
-                    gameOver = 0;
-                    break;
-                }
-            }
-        }
-
-        if (gameOver) {
-            snprintf(buffer, sizeof(buffer), "Você perdeu! O servidor venceu.\n");
             send(new_socket, buffer, strlen(buffer), 0);
             break;
         }

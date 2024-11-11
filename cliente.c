@@ -1,90 +1,127 @@
+#include <windows.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <ctype.h>
 
-#define SIZE 10
-#define PORT 8080
+#define PIPE_NAME "\\\\.\\pipe\\MyPipe"
+#define MATRIX_SIZE 10
+#define MESSAGE_SIZE 100
+#define BUFFER_SIZE (MATRIX_SIZE * MATRIX_SIZE * sizeof(char) + sizeof(int) * 2 + MESSAGE_SIZE)
 
-// Função para exibir o tabuleiro
-void displayBoard(char board[SIZE][SIZE]) {
-    printf("  ");
-    for (int i = 0; i < SIZE; i++) {
-        printf("%d ", i + 1);
-    }
-    printf("\n");
-    for (int i = 0; i < SIZE; i++) {
-        printf("%c ", 'A' + i);
-        for (int j = 0; j < SIZE; j++) {
-            printf("%c ", board[i][j]);
+typedef struct {
+    char matrix[MATRIX_SIZE][MATRIX_SIZE];
+    int row, col; // Coordenada para marcar na matriz do servidor
+    char message[MESSAGE_SIZE];
+} DataPackage;
+
+void inicializarMatriz(char matriz[MATRIX_SIZE][MATRIX_SIZE], char valor) {
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            matriz[i][j] = valor;
         }
-        printf("\n");
     }
 }
 
-// Função principal do cliente
-int main() {
-    int sock = 0, valread;
-    struct sockaddr_in serv_addr;
-    char buffer[1024] = {0};
-    char board[SIZE][SIZE];
-    
-    // Inicializa o tabuleiro do cliente
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            board[i][j] = '.';
+void displayMatriz (char matriz[MATRIX_SIZE][MATRIX_SIZE]) {
+    printf("   ");
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        printf("%2d ", i + 1);  // Exibe os números das colunas
+    }
+    printf("\n");
+
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        printf("%2d  ", i + 1);  // Exibe as letras das linhas
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            printf("%c  ", matriz[i][j]);  // Exibe o conteúdo de cada célula
         }
-    }
+        printf("\n");
+    }   
+}
 
-    // Cria o socket
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("Erro ao criar o socket\n");
-        return -1;
-    }
+int main() {
+    HANDLE hPipe;
+    DataPackage data;
+    DWORD bytesRead, bytesWritten;
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-        printf("Endereço inválido ou não suportado\n");
-        return -1;
-    }
-
-    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-        printf("Conexão falhou\n");
-        return -1;
-    }
-
-    printf("Conectado ao servidor!\n");
+    // Inicializar a matriz do cliente com '.'
+    inicializarMatriz(data.matrix, '.');
 
     while (1) {
-        // Recebe o tabuleiro do servidor
-        memset(buffer, 0, sizeof(buffer));
-        valread = read(sock, buffer, 1024);
-        if (valread <= 0) {
+        hPipe = CreateFile(
+            PIPE_NAME, 
+            GENERIC_READ | GENERIC_WRITE, 
+            0, 
+            NULL, 
+            OPEN_EXISTING, 
+            0, 
+            NULL
+        );
+
+        if (hPipe != INVALID_HANDLE_VALUE) {
+            printf("Conectado ao servidor!\n");
             break;
         }
 
-        // Exibe o tabuleiro do cliente
-        printf("\nSeu tabuleiro:\n");
-        displayBoard(board);
-
-        // Solicita ao cliente para enviar uma coordenada
-        printf("Digite uma coordenada para atacar (ex: A1): ");
-        scanf("%s", buffer);
-
-        send(sock, buffer, strlen(buffer), 0);
-
-        // Recebe a resposta do servidor
-        memset(buffer, 0, sizeof(buffer));
-        valread = read(sock, buffer, 1024);
-        if (valread <= 0) {
-            break;
+        if (GetLastError() == ERROR_PIPE_BUSY) {
+            printf("Pipe ocupado, aguardando...\n");
+            Sleep(1000);
+        } else {
+            printf("Erro ao conectar ao pipe. Código de erro: %d\n", GetLastError());
+            return 1;
         }
     }
 
-    close(sock);
+    int continueCommunication = 1;
+    while (continueCommunication) {
+        printf("Digite a linha (1-10) para marcar: ");
+        scanf("%d", &data.row);
+        printf("Digite a coluna (1-10) para marcar: ");
+        scanf("%d", &data.col);
+
+        printf("Digite a mensagem para o servidor (ou 'exit' para sair): ");
+        getchar();
+        fgets(data.message, MESSAGE_SIZE, stdin);
+        
+        if (strncmp(data.message, "exit", 4) == 0) {
+            continueCommunication = 0;
+        }
+
+        // Marcar coordenada no próprio tabuleiro
+        data.matrix[data.row-1][data.col-1] = 'C';
+
+        BOOL result = WriteFile(
+            hPipe, 
+            &data, 
+            sizeof(data), 
+            &bytesWritten, 
+            NULL
+        );
+
+        if (!result) {
+            printf("Erro ao enviar dados para o servidor. Código de erro: %d\n", GetLastError());
+            break;
+        }
+
+        printf("Dados enviados com sucesso.\n");
+
+        result = ReadFile(
+            hPipe, 
+            &data, 
+            sizeof(data), 
+            &bytesRead, 
+            NULL
+        );
+
+        if (!result || bytesRead == 0) {
+            printf("Servidor desconectado.\n");
+            break;
+        }
+
+        printf("Matriz recebida do servidor:\n");
+        displayMatriz(data.matrix);
+
+        printf("Mensagem recebida do servidor: %s\n", data.message);
+    }
+
+    CloseHandle(hPipe);
     return 0;
 }

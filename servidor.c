@@ -4,13 +4,11 @@
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
 #define MATRIX_SIZE 10
-#define MESSAGE_SIZE 100
-#define BUFFER_SIZE (MATRIX_SIZE * MATRIX_SIZE * sizeof(char) + sizeof(int) * 2 + MESSAGE_SIZE)
+#define BUFFER_SIZE (MATRIX_SIZE * MATRIX_SIZE * sizeof(char) + sizeof(int) * 2)
 
 typedef struct {
     char matrix[MATRIX_SIZE][MATRIX_SIZE];
     int row, col; // Coordenada para marcar na matriz do cliente
-    char message[MESSAGE_SIZE];
 } DataPackage;
 
 void inicializarMatriz(char matriz[MATRIX_SIZE][MATRIX_SIZE], char valor) {
@@ -24,14 +22,14 @@ void inicializarMatriz(char matriz[MATRIX_SIZE][MATRIX_SIZE], char valor) {
 void displayMatriz (char matriz[MATRIX_SIZE][MATRIX_SIZE]) {
     printf("   ");
     for (int i = 0; i < MATRIX_SIZE; i++) {
-        printf("%2d ", i + 1);  // Exibe os números das colunas
+        printf("%2d ", i + 1);  // Exibe os nï¿½meros das colunas
     }
     printf("\n");
 
     for (int i = 0; i < MATRIX_SIZE; i++) {
         printf("%2d  ", i + 1);  // Exibe as letras das linhas
         for (int j = 0; j < MATRIX_SIZE; j++) {
-            printf("%c  ", matriz[i][j]);  // Exibe o conteúdo de cada célula
+            printf("%c  ", matriz[i][j]);  // Exibe o conteï¿½do de cada cï¿½lula
         }
         printf("\n");
     }   
@@ -57,15 +55,15 @@ int main() {
     );
 
     if (hPipe == INVALID_HANDLE_VALUE) {
-        printf("Erro ao criar o pipe. Código de erro: %d\n", GetLastError());
+        printf("Erro ao criar o pipe. Cï¿½digo de erro: %d\n", GetLastError());
         return 1;
     }
 
-    printf("Aguardando conexão do cliente...\n");
+    printf("Aguardando conexï¿½o do cliente...\n");
 
     BOOL connected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
     if (!connected) {
-        printf("Falha ao conectar ao cliente. Código de erro: %d\n", GetLastError());
+        printf("Falha ao conectar ao cliente. Cï¿½digo de erro: %d\n", GetLastError());
         CloseHandle(hPipe);
         return 1;
     }
@@ -90,12 +88,6 @@ int main() {
         printf("Matriz recebida do cliente:\n");
         displayMatriz(data.matrix);
 
-        printf("Mensagem recebida do cliente: %s\n", data.message);
-
-        if (strncmp(data.message, "exit", 4) == 0) {
-            continueCommunication = 0;
-        }
-        
         // Solicitar coordenada do servidor para marcar no cliente
         printf("Digite a linha (1-10) para marcar no cliente: ");
         scanf("%d", &data.row);
@@ -104,10 +96,6 @@ int main() {
 
         // Marcar coordenada
         data.matrix[data.row-1][data.col-1] = 'S';
-
-        printf("Digite a mensagem para o cliente: ");
-        getchar();
-        fgets(data.message, MESSAGE_SIZE, stdin);
 
         // Enviar dados atualizados para o cliente
         result = WriteFile(
@@ -119,7 +107,7 @@ int main() {
         );
 
         if (!result) {
-            printf("Erro ao enviar dados para o cliente. Código de erro: %d\n", GetLastError());
+            printf("Erro ao enviar dados para o cliente. Cï¿½digo de erro: %d\n", GetLastError());
             break;
         }
 

@@ -77,7 +77,7 @@ int main() {
         printf("Digite a coluna (1-10) para marcar: ");
         scanf("%d", &data.col);
 
-        data.serverBoard[data.row-1][data.col-1] = 'C';
+        data.serverBoard[data.row-1][data.col-1] = 'X';
 
         BOOL result = WriteFile(
             hPipe, 
@@ -109,7 +109,7 @@ int main() {
 
         printf("Tabuleiro do servidor:\n");
         displayBoard(data.serverBoard);
-
+        printf("\n\n");
         printf("Tabuleiro do cliente:\n");
         displayBoard(data.clientBoard);
     }

@@ -89,7 +89,7 @@ int main() {
 
         printf("Tabuleiro do cliente:\n");
         displayBoard(data.clientBoard);
-
+        printf("\n\n");
         printf("Tabuleiro do servidor:\n");
         displayBoard(data.serverBoard);
 
@@ -100,7 +100,7 @@ int main() {
         scanf("%d", &data.col);
 
         // Marcar coordenada
-        data.clientBoard[data.row-1][data.col-1] = 'S';
+        data.clientBoard[data.row-1][data.col-1] = 'X';
 
         // Enviar dados atualizados para o cliente
         result = WriteFile(

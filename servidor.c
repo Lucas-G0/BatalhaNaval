@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
 #define SIZE 10
@@ -12,12 +14,22 @@ typedef struct {
     int row, col; // Coordenada para marcar na board do cliente
 } DataPackage;
 
-void initBoard(char board[SIZE][SIZE], char valor) {
+void placeShip(char board[SIZE][SIZE], int qt) {
+    for (int i = 0; i < qt; i++) {
+        int row = rand() % SIZE;
+        int col = rand() % SIZE;
+        board[row][col] = 'S';
+    }
+}
+
+void initBoard(char board[SIZE][SIZE], char valor, int qtShips) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             board[i][j] = valor;
         }
     }
+
+    placeShip(board, qtShips);
 }
 
 void displayBoard (char board[SIZE][SIZE]) {
@@ -41,9 +53,12 @@ int main() {
     DataPackage data;
     DWORD bytesRead, bytesWritten;
 
+    srand(time(NULL));
+
     // Inicializar os tabuleiros cliente e servidor com .
-    initBoard(data.serverBoard, '.');
-    initBoard(data.clientBoard, '.');
+    initBoard(data.serverBoard, '.', 5);
+    initBoard(data.clientBoard, '.', 5);
+
 
     hPipe = CreateNamedPipe(
         PIPE_NAME, 
@@ -72,6 +87,24 @@ int main() {
 
     printf("Cliente conectado!\n");
 
+     // Enviar os tabuleiros iniciais para o cliente
+    BOOL result = WriteFile(
+        hPipe, 
+        &data, 
+        sizeof(data), 
+        &bytesWritten, 
+        NULL
+    );
+
+    if (!result) {
+        printf("Erro ao enviar os tabuleiros iniciais para o cliente. Código de erro: %d\n", GetLastError());
+        DisconnectNamedPipe(hPipe);
+        CloseHandle(hPipe);
+        return 1;
+    }
+
+    printf("Tabuleiros iniciais enviados para o cliente.\n");
+    
     int continueCommunication = 1;
     while (continueCommunication) {
         BOOL result = ReadFile(
@@ -87,11 +120,13 @@ int main() {
             break;
         }
 
+        printf("\n\n");
         printf("Tabuleiro do cliente:\n");
         displayBoard(data.clientBoard);
         printf("\n\n");
         printf("Tabuleiro do servidor:\n");
         displayBoard(data.serverBoard);
+        printf("\n\n");
 
         // Solicitar coordenada do servidor para marcar no cliente
         printf("Digite a linha (1-10) para marcar no cliente: ");

@@ -12,14 +12,6 @@ typedef struct {
     int row, col; // Coordenada para marcar na matriz do servidor
 } DataPackage;
 
-void initBoard(char matriz[SIZE][SIZE], char valor) {
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            matriz[i][j] = valor;
-        }
-    }
-}
-
 void displayBoard (char matriz[SIZE][SIZE]) {
     printf("   ");
     for (int i = 0; i < SIZE; i++) {
@@ -36,14 +28,11 @@ void displayBoard (char matriz[SIZE][SIZE]) {
     }   
 }
 
+
 int main() {
     HANDLE hPipe;
     DataPackage data;
     DWORD bytesRead, bytesWritten;
-
-    // Inicializar a matriz do cliente com '.'
-    initBoard(data.clientBoard, '.');
-    initBoard(data.serverBoard, '.');
 
     while (1) {
         hPipe = CreateFile(
@@ -69,6 +58,27 @@ int main() {
             return 1;
         }
     }
+
+    // Receber os tabuleiros iniciais enviados pelo servidor
+    BOOL result = ReadFile(
+        hPipe, 
+        &data, 
+        sizeof(data), 
+        &bytesRead, 
+        NULL
+    );
+
+    if (!result || bytesRead == 0) {
+        printf("Erro ao receber tabuleiros iniciais do servidor.\n");
+        CloseHandle(hPipe);
+        return 1;
+    }
+
+    printf("\n\nTabuleiro do servidor:\n");
+    displayBoard(data.serverBoard);
+    printf("\nTabuleiro do cliente:\n");
+    displayBoard(data.clientBoard);
+    printf("\n");
 
     int continueCommunication = 1;
     while (continueCommunication) {
@@ -107,11 +117,13 @@ int main() {
             break;
         }
 
+        printf("\n\n");
         printf("Tabuleiro do servidor:\n");
         displayBoard(data.serverBoard);
         printf("\n\n");
         printf("Tabuleiro do cliente:\n");
         displayBoard(data.clientBoard);
+        printf("\n\n");
     }
 
     CloseHandle(hPipe);

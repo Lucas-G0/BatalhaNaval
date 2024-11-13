@@ -3,33 +3,34 @@
 #include <string.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
-#define MATRIX_SIZE 10
-#define BUFFER_SIZE (MATRIX_SIZE * MATRIX_SIZE * sizeof(char) + sizeof(int) * 2)
+#define SIZE 10
+#define BUFFER_SIZE (2 * SIZE * SIZE * sizeof(char) + sizeof(int) * 2)
 
 typedef struct {
-    char matrix[MATRIX_SIZE][MATRIX_SIZE];
-    int row, col; // Coordenada para marcar na matriz do cliente
+    char serverBoard[SIZE][SIZE];
+    char clientBoard[SIZE][SIZE];
+    int row, col; // Coordenada para marcar na board do cliente
 } DataPackage;
 
-void inicializarMatriz(char matriz[MATRIX_SIZE][MATRIX_SIZE], char valor) {
-    for (int i = 0; i < MATRIX_SIZE; i++) {
-        for (int j = 0; j < MATRIX_SIZE; j++) {
-            matriz[i][j] = valor;
+void inicializarBoard(char board[SIZE][SIZE], char valor) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            board[i][j] = valor;
         }
     }
 }
 
-void displayMatriz (char matriz[MATRIX_SIZE][MATRIX_SIZE]) {
+void displayBoard (char board[SIZE][SIZE]) {
     printf("   ");
-    for (int i = 0; i < MATRIX_SIZE; i++) {
+    for (int i = 0; i < SIZE; i++) {
         printf("%2d ", i + 1);  // Exibe os n�meros das colunas
     }
     printf("\n");
 
-    for (int i = 0; i < MATRIX_SIZE; i++) {
+    for (int i = 0; i < SIZE; i++) {
         printf("%2d  ", i + 1);  // Exibe as letras das linhas
-        for (int j = 0; j < MATRIX_SIZE; j++) {
-            printf("%c  ", matriz[i][j]);  // Exibe o conte�do de cada c�lula
+        for (int j = 0; j < SIZE; j++) {
+            printf("%c  ", board[i][j]);  // Exibe o conte�do de cada c�lula
         }
         printf("\n");
     }   
@@ -40,8 +41,9 @@ int main() {
     DataPackage data;
     DWORD bytesRead, bytesWritten;
 
-    // Inicializar a matriz do servidor com '.'
-    inicializarMatriz(data.matrix, '.');
+    // Inicializar os tabuleiros cliente e servidor com .
+    inicializarBoard(data.serverBoard, '.');
+    inicializarBoard(data.clientBoard, '.');
 
     hPipe = CreateNamedPipe(
         PIPE_NAME, 
@@ -85,8 +87,11 @@ int main() {
             break;
         }
 
-        printf("Matriz recebida do cliente:\n");
-        displayMatriz(data.matrix);
+        printf("Tabuleiro do cliente:\n");
+        displayBoard(data.clientBoard);
+
+        printf("Tabuleiro do servidor:\n");
+        displayBoard(data.serverBoard);
 
         // Solicitar coordenada do servidor para marcar no cliente
         printf("Digite a linha (1-10) para marcar no cliente: ");
@@ -95,7 +100,7 @@ int main() {
         scanf("%d", &data.col);
 
         // Marcar coordenada
-        data.matrix[data.row-1][data.col-1] = 'S';
+        data.clientBoard[data.row-1][data.col-1] = 'S';
 
         // Enviar dados atualizados para o cliente
         result = WriteFile(

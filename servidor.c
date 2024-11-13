@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <locale.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
 #define SIZE 10
@@ -12,9 +13,11 @@
 typedef struct {
     char serverBoard[SIZE][SIZE];
     char clientBoard[SIZE][SIZE];
-    int row, col; // Coordenada para marcar na board do cliente
+    int row, col; // Para marcar a jogada
 } DataPackage;
 
+
+//função para inserir os navios aleatoriamente no tabuleiro
 void placeShip(char board[SIZE][SIZE], int qt) {
     for (int i = 0; i < qt; i++) {
         int row = rand() % SIZE;
@@ -23,52 +26,59 @@ void placeShip(char board[SIZE][SIZE], int qt) {
     }
 }
 
+
+//função para iniciar todo o tabuleiro com um valor e inserir os navios
 void initBoard(char board[SIZE][SIZE], char valor, int qtShips) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             board[i][j] = valor;
         }
     }
-
     placeShip(board, qtShips);
 }
 
+
+//função para mostrar o tabuleiro completo
 void displayBoard (char board[SIZE][SIZE]) {
     printf("   ");
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d ", i + 1);  // Exibe os n�meros das colunas
+        printf("%2d ", i + 1);
     }
     printf("\n");
 
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d  ", i + 1);  // Exibe as letras das linhas
+        printf("%2d  ", i + 1);
         for (int j = 0; j < SIZE; j++) {
-            printf("%c  ", board[i][j]);  // Exibe o conte�do de cada c�lula
+            printf("%c  ", board[i][j]);
         }
         printf("\n");
     }   
 }
 
+
+//função para mostrar o tabuleiro sem os navios
 void displayBoardWithoutShip(char matriz[SIZE][SIZE]) {
     printf("   ");
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d ", i + 1);  // Exibe os n�meros das colunas
+        printf("%2d ", i + 1);
     }
     printf("\n");
 
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d  ", i + 1);  // Exibe as letras das linhas
+        printf("%2d  ", i + 1);
         for (int j = 0; j < SIZE; j++) {
             if (matriz[i][j] == 'S') {
                 printf(".  ");
             } else {
-                printf("%c  ", matriz[i][j]);  // Exibe o conte�do de cada c�lula
+                printf("%c  ", matriz[i][j]);
             }
         }
         printf("\n");
     }   
 }
 
+
+//função para marcar uma posição do tabuleiro, O para acertos e X para erros
 void attack(char board[SIZE][SIZE], int row, int col) {
     if (board[row][col] == 'S') {
         board[row][col] = 'O';
@@ -77,6 +87,8 @@ void attack(char board[SIZE][SIZE], int row, int col) {
     }
 }
 
+
+// função para verificar se o jogo acabou, se não houver mais navios (S) no tabuleiro
 bool isGameEnded(char board[SIZE][SIZE]) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
@@ -95,9 +107,11 @@ int main() {
 
     srand(time(NULL));
 
-    // Inicializar os tabuleiros cliente e servidor com .
-    initBoard(data.serverBoard, '.', 1);
-    initBoard(data.clientBoard, '.', 1);
+    setlocale(LC_ALL, "Portuguese");
+
+    // Inicializar os tabuleiros cliente e servidor com . e insere 5 navios aleatoriamente
+    initBoard(data.serverBoard, '.', 5);
+    initBoard(data.clientBoard, '.', 5);
 
 
     hPipe = CreateNamedPipe(
@@ -112,22 +126,22 @@ int main() {
     );
 
     if (hPipe == INVALID_HANDLE_VALUE) {
-        printf("Erro ao criar o pipe. C�digo de erro: %d\n", GetLastError());
+        printf("Erro ao criar o pipe. Código de erro: %d\n", GetLastError());
         return 1;
     }
 
-    printf("Aguardando conex�o do cliente...\n");
+    printf("Aguardando conexão do cliente...\n");
 
     BOOL connected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
     if (!connected) {
-        printf("Falha ao conectar ao cliente. C�digo de erro: %d\n", GetLastError());
+        printf("Falha ao conectar ao cliente. Código de erro: %d\n", GetLastError());
         CloseHandle(hPipe);
         return 1;
     }
 
-    printf("Cliente conectado!\n");
+    printf("INICIANDO O JOGO: BATALHA NAVAL!\n\n");
 
-     // Enviar os tabuleiros iniciais para o cliente
+     // Enviar os tabuleiros inicializados para o cliente
     BOOL result = WriteFile(
         hPipe, 
         &data, 
@@ -137,14 +151,12 @@ int main() {
     );
 
     if (!result) {
-        printf("Erro ao enviar os tabuleiros iniciais para o cliente. Código de erro: %d\n", GetLastError());
+        printf("Erro ao enviar os tabuleiros. Código de erro: %d\n", GetLastError());
         DisconnectNamedPipe(hPipe);
         CloseHandle(hPipe);
         return 1;
     }
 
-    printf("Tabuleiros iniciais enviados para o cliente.\n");
-    
     int continueCommunication = 1;
     while (continueCommunication) {
         BOOL result = ReadFile(
@@ -156,7 +168,6 @@ int main() {
         );
 
         if (!result || bytesRead == 0) {
-            printf("Cliente desconectado.\n");
             break;
         }
 
@@ -169,7 +180,6 @@ int main() {
         displayBoardWithoutShip(data.clientBoard);
         printf("\n\n");
 
-        // Solicitar coordenada do servidor para marcar no cliente
         printf("Digite a linha (1-10) para marcar no cliente: ");
         scanf("%d", &data.row);
         printf("Digite a coluna (1-10) para marcar no cliente: ");
@@ -185,7 +195,6 @@ int main() {
             return 1;
         }
 
-        // Enviar dados atualizados para o cliente
         result = WriteFile(
             hPipe, 
             &data, 
@@ -195,11 +204,9 @@ int main() {
         );
 
         if (!result) {
-            printf("Erro ao enviar dados para o cliente. C�digo de erro: %d\n", GetLastError());
+            printf("Erro ao enviar dados para o cliente. Código de erro: %d\n", GetLastError());
             break;
         }
-
-        printf("Resposta enviada para o cliente.\n");
     }
     printf("Você perdeu! Jogo fechando..\n");
     Sleep(5000);

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <locale.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
 #define SIZE 10
@@ -10,45 +11,51 @@
 typedef struct {
     char serverBoard[SIZE][SIZE];
     char clientBoard[SIZE][SIZE];
-    int row, col; // Coordenada para marcar na matriz do servidor
+    int row, col; // Para marcar a jogada
 } DataPackage;
 
+
+//função para mostrar o tabuleiro completo
 void displayBoard (char matriz[SIZE][SIZE]) {
     printf("   ");
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d ", i + 1);  // Exibe os n�meros das colunas
+        printf("%2d ", i + 1);
     }
     printf("\n");
 
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d  ", i + 1);  // Exibe as letras das linhas
+        printf("%2d  ", i + 1);
         for (int j = 0; j < SIZE; j++) {
-            printf("%c  ", matriz[i][j]);  // Exibe o conte�do de cada c�lula
+            printf("%c  ", matriz[i][j]);
         }
         printf("\n");
     }   
 }
 
+
+//função para mostrar o tabuleiro sem os navios
 void displayBoardWithoutShip(char matriz[SIZE][SIZE]) {
     printf("   ");
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d ", i + 1);  // Exibe os n�meros das colunas
+        printf("%2d ", i + 1);
     }
     printf("\n");
 
     for (int i = 0; i < SIZE; i++) {
-        printf("%2d  ", i + 1);  // Exibe as letras das linhas
+        printf("%2d  ", i + 1);
         for (int j = 0; j < SIZE; j++) {
             if (matriz[i][j] == 'S') {
                 printf(".  ");
             } else {
-                printf("%c  ", matriz[i][j]);  // Exibe o conte�do de cada c�lula
+                printf("%c  ", matriz[i][j]);
             }
         }
         printf("\n");
     }   
 }
 
+
+//função para marcar uma posição do tabuleiro, O para acertos e X para erros
 void attack(char board[SIZE][SIZE], int row, int col) {
     if (board[row][col] == 'S') {
         board[row][col] = 'O';
@@ -57,6 +64,8 @@ void attack(char board[SIZE][SIZE], int row, int col) {
     }
 }
 
+
+// função para verificar se o jogo acabou, se não houver mais navios (S) no tabuleiro
 bool isGameEnded(char board[SIZE][SIZE]) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
@@ -73,6 +82,8 @@ int main() {
     DataPackage data;
     DWORD bytesRead, bytesWritten;
 
+    setlocale(LC_ALL, "pt_BR.UTF-8");
+
     while (1) {
         hPipe = CreateFile(
             PIPE_NAME, 
@@ -85,15 +96,15 @@ int main() {
         );
 
         if (hPipe != INVALID_HANDLE_VALUE) {
-            printf("Conectado ao servidor!\n");
+            printf("INICIANDO O JOGO: BATALHA NAVAL!\n\n");
             break;
         }
 
         if (GetLastError() == ERROR_PIPE_BUSY) {
-            printf("Pipe ocupado, aguardando...\n");
+            printf("Servidor ocupado, aguardando...\n");
             Sleep(1000);
         } else {
-            printf("Erro ao conectar ao pipe. Código de erro: %d\n", GetLastError());
+            printf("Erro ao conectar. Código de erro: %d\n", GetLastError());
             return 1;
         }
     }
@@ -108,28 +119,28 @@ int main() {
     );
 
     if (!result || bytesRead == 0) {
-        printf("Erro ao receber tabuleiros iniciais do servidor.\n");
+        printf("Erro ao iniciar o jogo.\n");
         CloseHandle(hPipe);
         return 1;
     }
 
     printf("\n\nSeu tabuleiro\n");
     displayBoard(data.clientBoard);
-    printf("\nTabuleiro do oponente:\n");
+    printf("\n\nTabuleiro do oponente:\n");
     displayBoardWithoutShip(data.serverBoard);
-    printf("\n");
+    printf("\n\n");
 
     int continueCommunication = 1;
     while (continueCommunication) {
-        printf("Digite a linha (1-10) para marcar: ");
+        printf("Digite a linha que deseja atacar: ");
         scanf("%d", &data.row);
-        printf("Digite a coluna (1-10) para marcar: ");
+        printf("Digite a coluna que deseja atacar: ");
         scanf("%d", &data.col);
 
         attack(data.serverBoard, data.row-1, data.col-1);
 
         if (isGameEnded(data.serverBoard)) {
-            printf("Você venceu! Jogo fechando..\n");
+            printf("Você venceu! Jogo fechando..\n\n");
             Sleep(5000);
             CloseHandle(hPipe);
             return 1;
@@ -144,11 +155,9 @@ int main() {
         );
 
         if (!result) {
-            printf("Erro ao enviar dados para o servidor. Código de erro: %d\n", GetLastError());
+            printf("Erro ao enviar dados. Código de erro: %d\n", GetLastError());
             break;
         }
-
-        printf("Dados enviados com sucesso.\n");
 
         result = ReadFile(
             hPipe, 
@@ -159,7 +168,6 @@ int main() {
         );
 
         if (!result || bytesRead == 0) {
-            printf("Servidor desconectado.\n");
             break;
         }
 
@@ -171,7 +179,7 @@ int main() {
         displayBoardWithoutShip(data.serverBoard);
         printf("\n\n");
     }
-    printf("Você perdeu! Jogo fechando..\n");
+    printf("\nVocê perdeu! Jogo fechando..\n");
     Sleep(5000);
     CloseHandle(hPipe);
     return 0;

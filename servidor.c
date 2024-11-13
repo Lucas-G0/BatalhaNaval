@@ -68,6 +68,14 @@ void displayBoardWithoutShip(char matriz[SIZE][SIZE]) {
     }   
 }
 
+void attack(char board[SIZE][SIZE], int row, int col) {
+    if (board[row][col] == 'S') {
+        board[row][col] = 'O';
+    } else {
+        board[row][col] = 'X';
+    }
+}
+
 int main() {
     HANDLE hPipe;
     DataPackage data;
@@ -154,8 +162,7 @@ int main() {
         printf("Digite a coluna (1-10) para marcar no cliente: ");
         scanf("%d", &data.col);
 
-        // Marcar coordenada
-        data.clientBoard[data.row-1][data.col-1] = 'X';
+        attack(data.clientBoard, data.row-1, data.col-1);
 
         // Enviar dados atualizados para o cliente
         result = WriteFile(

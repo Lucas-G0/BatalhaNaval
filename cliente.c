@@ -48,6 +48,13 @@ void displayBoardWithoutShip(char matriz[SIZE][SIZE]) {
     }   
 }
 
+void attack(char board[SIZE][SIZE], int row, int col) {
+    if (board[row][col] == 'S') {
+        board[row][col] = 'O';
+    } else {
+        board[row][col] = 'X';
+    }
+}
 
 int main() {
     HANDLE hPipe;
@@ -107,7 +114,7 @@ int main() {
         printf("Digite a coluna (1-10) para marcar: ");
         scanf("%d", &data.col);
 
-        data.serverBoard[data.row-1][data.col-1] = 'X';
+        attack(data.serverBoard, data.row-1, data.col-1);
 
         BOOL result = WriteFile(
             hPipe, 

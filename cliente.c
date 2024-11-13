@@ -4,13 +4,11 @@
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
 #define MATRIX_SIZE 10
-#define MESSAGE_SIZE 100
-#define BUFFER_SIZE (MATRIX_SIZE * MATRIX_SIZE * sizeof(char) + sizeof(int) * 2 + MESSAGE_SIZE)
+#define BUFFER_SIZE (MATRIX_SIZE * MATRIX_SIZE * sizeof(char) + sizeof(int) * 2)
 
 typedef struct {
     char matrix[MATRIX_SIZE][MATRIX_SIZE];
     int row, col; // Coordenada para marcar na matriz do servidor
-    char message[MESSAGE_SIZE];
 } DataPackage;
 
 void inicializarMatriz(char matriz[MATRIX_SIZE][MATRIX_SIZE], char valor) {
@@ -24,14 +22,14 @@ void inicializarMatriz(char matriz[MATRIX_SIZE][MATRIX_SIZE], char valor) {
 void displayMatriz (char matriz[MATRIX_SIZE][MATRIX_SIZE]) {
     printf("   ");
     for (int i = 0; i < MATRIX_SIZE; i++) {
-        printf("%2d ", i + 1);  // Exibe os números das colunas
+        printf("%2d ", i + 1);  // Exibe os nï¿½meros das colunas
     }
     printf("\n");
 
     for (int i = 0; i < MATRIX_SIZE; i++) {
         printf("%2d  ", i + 1);  // Exibe as letras das linhas
         for (int j = 0; j < MATRIX_SIZE; j++) {
-            printf("%c  ", matriz[i][j]);  // Exibe o conteúdo de cada célula
+            printf("%c  ", matriz[i][j]);  // Exibe o conteï¿½do de cada cï¿½lula
         }
         printf("\n");
     }   
@@ -65,7 +63,7 @@ int main() {
             printf("Pipe ocupado, aguardando...\n");
             Sleep(1000);
         } else {
-            printf("Erro ao conectar ao pipe. Código de erro: %d\n", GetLastError());
+            printf("Erro ao conectar ao pipe. Cï¿½digo de erro: %d\n", GetLastError());
             return 1;
         }
     }
@@ -77,15 +75,6 @@ int main() {
         printf("Digite a coluna (1-10) para marcar: ");
         scanf("%d", &data.col);
 
-        printf("Digite a mensagem para o servidor (ou 'exit' para sair): ");
-        getchar();
-        fgets(data.message, MESSAGE_SIZE, stdin);
-        
-        if (strncmp(data.message, "exit", 4) == 0) {
-            continueCommunication = 0;
-        }
-
-        // Marcar coordenada no próprio tabuleiro
         data.matrix[data.row-1][data.col-1] = 'C';
 
         BOOL result = WriteFile(
@@ -97,7 +86,7 @@ int main() {
         );
 
         if (!result) {
-            printf("Erro ao enviar dados para o servidor. Código de erro: %d\n", GetLastError());
+            printf("Erro ao enviar dados para o servidor. Cï¿½digo de erro: %d\n", GetLastError());
             break;
         }
 
@@ -118,8 +107,6 @@ int main() {
 
         printf("Matriz recebida do servidor:\n");
         displayMatriz(data.matrix);
-
-        printf("Mensagem recebida do servidor: %s\n", data.message);
     }
 
     CloseHandle(hPipe);

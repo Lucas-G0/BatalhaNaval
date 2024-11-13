@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
 #define SIZE 10
@@ -56,6 +57,17 @@ void attack(char board[SIZE][SIZE], int row, int col) {
     }
 }
 
+bool isGameEnded(char board[SIZE][SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (board[i][j] == 'S') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 int main() {
     HANDLE hPipe;
     DataPackage data;
@@ -81,7 +93,7 @@ int main() {
             printf("Pipe ocupado, aguardando...\n");
             Sleep(1000);
         } else {
-            printf("Erro ao conectar ao pipe. C�digo de erro: %d\n", GetLastError());
+            printf("Erro ao conectar ao pipe. Código de erro: %d\n", GetLastError());
             return 1;
         }
     }
@@ -116,6 +128,13 @@ int main() {
 
         attack(data.serverBoard, data.row-1, data.col-1);
 
+        if (isGameEnded(data.serverBoard)) {
+            printf("Você venceu! Jogo fechando..\n");
+            Sleep(5000);
+            CloseHandle(hPipe);
+            return 1;
+        }
+
         BOOL result = WriteFile(
             hPipe, 
             &data, 
@@ -125,7 +144,7 @@ int main() {
         );
 
         if (!result) {
-            printf("Erro ao enviar dados para o servidor. C�digo de erro: %d\n", GetLastError());
+            printf("Erro ao enviar dados para o servidor. Código de erro: %d\n", GetLastError());
             break;
         }
 
@@ -152,7 +171,8 @@ int main() {
         displayBoardWithoutShip(data.serverBoard);
         printf("\n\n");
     }
-
+    printf("Você perdeu! Jogo fechando..\n");
+    Sleep(5000);
     CloseHandle(hPipe);
     return 0;
 }

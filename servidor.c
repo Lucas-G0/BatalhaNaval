@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
@@ -76,6 +77,17 @@ void attack(char board[SIZE][SIZE], int row, int col) {
     }
 }
 
+bool isGameEnded(char board[SIZE][SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (board[i][j] == 'S') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 int main() {
     HANDLE hPipe;
     DataPackage data;
@@ -84,8 +96,8 @@ int main() {
     srand(time(NULL));
 
     // Inicializar os tabuleiros cliente e servidor com .
-    initBoard(data.serverBoard, '.', 5);
-    initBoard(data.clientBoard, '.', 5);
+    initBoard(data.serverBoard, '.', 1);
+    initBoard(data.clientBoard, '.', 1);
 
 
     hPipe = CreateNamedPipe(
@@ -148,6 +160,7 @@ int main() {
             break;
         }
 
+
         printf("\n\n");
         printf("Seu tabuleiro:\n");
         displayBoard(data.serverBoard);
@@ -163,6 +176,14 @@ int main() {
         scanf("%d", &data.col);
 
         attack(data.clientBoard, data.row-1, data.col-1);
+
+        if (isGameEnded(data.clientBoard)) {
+            printf("Você venceu! Jogo fechando..\n");
+            Sleep(5000);
+            DisconnectNamedPipe(hPipe);
+            CloseHandle(hPipe);
+            return 1;
+        }
 
         // Enviar dados atualizados para o cliente
         result = WriteFile(
@@ -180,7 +201,8 @@ int main() {
 
         printf("Resposta enviada para o cliente.\n");
     }
-
+    printf("Você perdeu! Jogo fechando..\n");
+    Sleep(5000);
     DisconnectNamedPipe(hPipe);
     CloseHandle(hPipe);
     return 0;

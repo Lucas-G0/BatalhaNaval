@@ -7,8 +7,8 @@
 #define BUFFER_SIZE (2 * SIZE * SIZE * sizeof(char) + sizeof(int) * 2)
 
 typedef struct {
-    char clientBoard[SIZE][SIZE];
     char serverBoard[SIZE][SIZE];
+    char clientBoard[SIZE][SIZE];
     int row, col; // Coordenada para marcar na matriz do servidor
 } DataPackage;
 

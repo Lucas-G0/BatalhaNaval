@@ -48,6 +48,26 @@ void displayBoard (char board[SIZE][SIZE]) {
     }   
 }
 
+void displayBoardWithoutShip(char matriz[SIZE][SIZE]) {
+    printf("   ");
+    for (int i = 0; i < SIZE; i++) {
+        printf("%2d ", i + 1);  // Exibe os n�meros das colunas
+    }
+    printf("\n");
+
+    for (int i = 0; i < SIZE; i++) {
+        printf("%2d  ", i + 1);  // Exibe as letras das linhas
+        for (int j = 0; j < SIZE; j++) {
+            if (matriz[i][j] == 'S') {
+                printf(".  ");
+            } else {
+                printf("%c  ", matriz[i][j]);  // Exibe o conte�do de cada c�lula
+            }
+        }
+        printf("\n");
+    }   
+}
+
 int main() {
     HANDLE hPipe;
     DataPackage data;
@@ -121,11 +141,11 @@ int main() {
         }
 
         printf("\n\n");
-        printf("Tabuleiro do cliente:\n");
-        displayBoard(data.clientBoard);
-        printf("\n\n");
-        printf("Tabuleiro do servidor:\n");
+        printf("Seu tabuleiro:\n");
         displayBoard(data.serverBoard);
+        printf("\n\n");
+        printf("Tabuleiro do oponente:\n");
+        displayBoardWithoutShip(data.clientBoard);
         printf("\n\n");
 
         // Solicitar coordenada do servidor para marcar no cliente

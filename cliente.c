@@ -28,6 +28,26 @@ void displayBoard (char matriz[SIZE][SIZE]) {
     }   
 }
 
+void displayBoardWithoutShip(char matriz[SIZE][SIZE]) {
+    printf("   ");
+    for (int i = 0; i < SIZE; i++) {
+        printf("%2d ", i + 1);  // Exibe os n�meros das colunas
+    }
+    printf("\n");
+
+    for (int i = 0; i < SIZE; i++) {
+        printf("%2d  ", i + 1);  // Exibe as letras das linhas
+        for (int j = 0; j < SIZE; j++) {
+            if (matriz[i][j] == 'S') {
+                printf(".  ");
+            } else {
+                printf("%c  ", matriz[i][j]);  // Exibe o conte�do de cada c�lula
+            }
+        }
+        printf("\n");
+    }   
+}
+
 
 int main() {
     HANDLE hPipe;
@@ -74,10 +94,10 @@ int main() {
         return 1;
     }
 
-    printf("\n\nTabuleiro do servidor:\n");
-    displayBoard(data.serverBoard);
-    printf("\nTabuleiro do cliente:\n");
+    printf("\n\nSeu tabuleiro\n");
     displayBoard(data.clientBoard);
+    printf("\nTabuleiro do oponente:\n");
+    displayBoardWithoutShip(data.serverBoard);
     printf("\n");
 
     int continueCommunication = 1;
@@ -118,11 +138,11 @@ int main() {
         }
 
         printf("\n\n");
-        printf("Tabuleiro do servidor:\n");
-        displayBoard(data.serverBoard);
-        printf("\n\n");
-        printf("Tabuleiro do cliente:\n");
+        printf("Seu tabuleiro:\n");
         displayBoard(data.clientBoard);
+        printf("\n\n");
+        printf("Tabuleiro do oponente:\n");
+        displayBoardWithoutShip(data.serverBoard);
         printf("\n\n");
     }
 

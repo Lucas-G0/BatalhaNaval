@@ -3,32 +3,33 @@
 #include <string.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
-#define MATRIX_SIZE 10
-#define BUFFER_SIZE (MATRIX_SIZE * MATRIX_SIZE * sizeof(char) + sizeof(int) * 2)
+#define SIZE 10
+#define BUFFER_SIZE (2 * SIZE * SIZE * sizeof(char) + sizeof(int) * 2)
 
 typedef struct {
-    char matrix[MATRIX_SIZE][MATRIX_SIZE];
+    char clientBoard[SIZE][SIZE];
+    char serverBoard[SIZE][SIZE];
     int row, col; // Coordenada para marcar na matriz do servidor
 } DataPackage;
 
-void inicializarMatriz(char matriz[MATRIX_SIZE][MATRIX_SIZE], char valor) {
-    for (int i = 0; i < MATRIX_SIZE; i++) {
-        for (int j = 0; j < MATRIX_SIZE; j++) {
+void initBoard(char matriz[SIZE][SIZE], char valor) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
             matriz[i][j] = valor;
         }
     }
 }
 
-void displayMatriz (char matriz[MATRIX_SIZE][MATRIX_SIZE]) {
+void displayBoard (char matriz[SIZE][SIZE]) {
     printf("   ");
-    for (int i = 0; i < MATRIX_SIZE; i++) {
+    for (int i = 0; i < SIZE; i++) {
         printf("%2d ", i + 1);  // Exibe os n�meros das colunas
     }
     printf("\n");
 
-    for (int i = 0; i < MATRIX_SIZE; i++) {
+    for (int i = 0; i < SIZE; i++) {
         printf("%2d  ", i + 1);  // Exibe as letras das linhas
-        for (int j = 0; j < MATRIX_SIZE; j++) {
+        for (int j = 0; j < SIZE; j++) {
             printf("%c  ", matriz[i][j]);  // Exibe o conte�do de cada c�lula
         }
         printf("\n");
@@ -41,7 +42,8 @@ int main() {
     DWORD bytesRead, bytesWritten;
 
     // Inicializar a matriz do cliente com '.'
-    inicializarMatriz(data.matrix, '.');
+    initBoard(data.clientBoard, '.');
+    initBoard(data.serverBoard, '.');
 
     while (1) {
         hPipe = CreateFile(
@@ -75,7 +77,7 @@ int main() {
         printf("Digite a coluna (1-10) para marcar: ");
         scanf("%d", &data.col);
 
-        data.matrix[data.row-1][data.col-1] = 'C';
+        data.serverBoard[data.row-1][data.col-1] = 'C';
 
         BOOL result = WriteFile(
             hPipe, 
@@ -105,8 +107,11 @@ int main() {
             break;
         }
 
-        printf("Matriz recebida do servidor:\n");
-        displayMatriz(data.matrix);
+        printf("Tabuleiro do servidor:\n");
+        displayBoard(data.clientBoard);
+
+        printf("Tabuleiro do cliente:\n");
+        displayBoard(data.serverBoard);
     }
 
     CloseHandle(hPipe);

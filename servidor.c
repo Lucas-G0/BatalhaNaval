@@ -12,7 +12,7 @@ typedef struct {
     int row, col; // Coordenada para marcar na board do cliente
 } DataPackage;
 
-void inicializarBoard(char board[SIZE][SIZE], char valor) {
+void initBoard(char board[SIZE][SIZE], char valor) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             board[i][j] = valor;
@@ -42,8 +42,8 @@ int main() {
     DWORD bytesRead, bytesWritten;
 
     // Inicializar os tabuleiros cliente e servidor com .
-    inicializarBoard(data.serverBoard, '.');
-    inicializarBoard(data.clientBoard, '.');
+    initBoard(data.serverBoard, '.');
+    initBoard(data.clientBoard, '.');
 
     hPipe = CreateNamedPipe(
         PIPE_NAME, 

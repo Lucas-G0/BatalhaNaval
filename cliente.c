@@ -108,10 +108,10 @@ int main() {
         }
 
         printf("Tabuleiro do servidor:\n");
-        displayBoard(data.clientBoard);
+        displayBoard(data.serverBoard);
 
         printf("Tabuleiro do cliente:\n");
-        displayBoard(data.serverBoard);
+        displayBoard(data.clientBoard);
     }
 
     CloseHandle(hPipe);

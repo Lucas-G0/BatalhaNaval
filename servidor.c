@@ -18,11 +18,20 @@ typedef struct {
 
 
 //função para inserir os navios aleatoriamente no tabuleiro
-void placeShip(char board[SIZE][SIZE], int qt) {
-    for (int i = 0; i < qt; i++) {
-        int row = rand() % SIZE;
-        int col = rand() % SIZE;
-        board[row][col] = 'S';
+void placeShip(char board[SIZE][SIZE], int size, char direction) {
+    int row, col;
+    if (direction == 'V') {
+        row = rand() % (SIZE - size + 1);
+        col = rand() % SIZE;
+        for (int i = 0; i < size; i++) {
+            board[row + i][col] = 'S';
+        }
+    } else {
+        row = rand() % SIZE;
+        col = rand() % (SIZE - size + 1);
+        for (int i = 0; i < size; i++) {
+            board[row][col + i] = 'S';
+        }
     }
 }
 
@@ -34,7 +43,11 @@ void initBoard(char board[SIZE][SIZE], char valor, int qtShips) {
             board[i][j] = valor;
         }
     }
-    placeShip(board, qtShips);
+    for (int i = 0; i < qtShips; i++) {
+        char direction = rand() % 2 == 0 ? 'V' : 'H';
+        int size = rand() % 3 + 2;
+        placeShip(board, size, direction);
+    }
 }
 
 
@@ -110,8 +123,8 @@ int main() {
     setlocale(LC_ALL, "Portuguese");
 
     // Inicializar os tabuleiros cliente e servidor com . e insere 5 navios aleatoriamente
-    initBoard(data.serverBoard, '.', 5);
-    initBoard(data.clientBoard, '.', 5);
+    initBoard(data.serverBoard, '.', 6);
+    initBoard(data.clientBoard, '.', 6);
 
 
     hPipe = CreateNamedPipe(

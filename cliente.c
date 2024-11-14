@@ -57,6 +57,25 @@ void displayBoardWithoutShip(char matriz[SIZE][SIZE]) {
 
 //função para marcar uma posição do tabuleiro, O para acertos e X para erros
 void attack(char board[SIZE][SIZE], int row, int col) {
+    if (board[row][col] == 'O' || board[row][col] == 'X') {
+
+        do {
+            printf("Posicao ja marcada! Tente novamente\n");
+            printf("\nDigite a linha (1-10) para marcar no cliente: ");
+            scanf("%d", &row);
+            printf("\nDigite a coluna (1-10) para marcar no cliente: ");
+            scanf("%d", &col);
+        } while (board[row-1][col-1] == 'O' || board[row-1][col-1] == 'X');
+
+        if (board[row-1][col-1] == 'S') {
+        board[row-1][col-1] = 'O';
+        } else {
+        board[row-1][col-1] = 'X';
+        }
+
+        return;
+    }
+
     if (board[row][col] == 'S') {
         board[row][col] = 'O';
     } else {

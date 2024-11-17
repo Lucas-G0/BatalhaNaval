@@ -142,8 +142,8 @@ int main() {
     setlocale(LC_ALL, "Portuguese");
 
     // Inicializar os tabuleiros cliente e servidor com . e insere 5 navios aleatoriamente
-    initBoard(data.serverBoard, '.', 6);
-    initBoard(data.clientBoard, '.', 6);
+    initBoard(data.serverBoard, '.', 5);
+    initBoard(data.clientBoard, '.', 5);
 
 
     hPipe = CreateNamedPipe(
